@@ -4,6 +4,10 @@ import base64
 from PIL import Image
 import io
 
+# 모델 설정
+VISION_MODEL = "google/medgemma-4b-it"      # 반드시 정확
+TEXT_MODEL = "google/medgemma-27b-text-it"  # 반드시 정확
+
 # 페이지 설정
 st.set_page_config(
     page_title="MedGemma 의료 이미지 분석",
@@ -42,15 +46,25 @@ if api_key:
             headers = {"Authorization": f"Bearer {api_key}"}
             try:
                 response = requests.get(
-                    "https://api-inference.huggingface.co/models/google/medgemma-4b-it",
+                    f"https://api-inference.huggingface.co/models/{VISION_MODEL}",
                     headers=headers
                 )
                 if response.status_code == 200:
-                    st.sidebar.success("MedGemma-4b-it: ✅ 사용 가능")
+                    st.sidebar.success(f"{VISION_MODEL}: ✅ 사용 가능")
                 else:
-                    st.sidebar.warning("MedGemma-4b-it: ⏳ 준비 중")
+                    st.sidebar.warning(f"{VISION_MODEL}: ⏳ 준비 중")
+                    
+                # MedGemma-27b-text-it 상태 확인
+                response = requests.get(
+                    f"https://api-inference.huggingface.co/models/{TEXT_MODEL}",
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    st.sidebar.success(f"{TEXT_MODEL}: ✅ 사용 가능")
+                else:
+                    st.sidebar.warning(f"{TEXT_MODEL}: ⏳ 준비 중")
             except:
-                st.sidebar.error("MedGemma-4b-it: ❌ 확인 실패")
+                st.sidebar.error("모델 상태 확인 실패")
 
 # 이미지를 base64로 변환하는 함수
 def image_to_base64(image):
@@ -59,7 +73,7 @@ def image_to_base64(image):
     return base64.b64encode(buffered.getvalue()).decode()
 
 # MedGemma API 호출 함수
-def call_medgemma_vision(prompt, image_b64, api_key, model="google/medgemma-4b-it"):
+def call_medgemma_vision(prompt, image_b64, api_key, model=VISION_MODEL):
     url = f"https://api-inference.huggingface.co/models/{model}"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -92,7 +106,7 @@ def call_medgemma_vision(prompt, image_b64, api_key, model="google/medgemma-4b-i
         return {"error": f"API 오류: {r.status_code} - {r.text}"}
 
 # MedGemma 텍스트 전용 API 호출 함수
-def call_medgemma_text(prompt, api_key, model="google/medgemma-27b"):
+def call_medgemma_text(prompt, api_key, model=TEXT_MODEL):
     url = f"https://api-inference.huggingface.co/models/{model}"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -307,13 +321,13 @@ st.markdown("""
 
 # 모델 정보
 with st.expander("📚 MedGemma 모델 정보"):
-    st.markdown("""
-    **MedGemma-4b-it**: 
+    st.markdown(f"""
+    **{VISION_MODEL}**: 
     - 의료 이미지 분석에 특화된 4B 파라미터 모델
     - Vision-Language 태스크 수행 가능
     - X-ray, CT, MRI 등 다양한 의료 이미지 분석
     
-    **MedGemma-27B**: 
+    **{TEXT_MODEL}**: 
     - 대규모 언어 모델 기반의 임상 추론 특화
     - 의학 문헌과 임상 데이터로 학습
     - 복잡한 의료 케이스 분석 가능
